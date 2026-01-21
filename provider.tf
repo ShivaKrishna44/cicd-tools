@@ -8,7 +8,7 @@ terraform {
 
   backend "s3" {
     bucket = "cva-tf-remote-state-dev1"
-    key    = "expense-cicd" # you should have unique keys with in the bucket, same key should not be used in other repos or tf projects
+    key    = "expense-infra-dev-key" # you should have unique keys with in the bucket, same key should not be used in other repos or tf projects
     region = "us-east-1"
     dynamodb_table = "cva-tf-remote-state-dev1"
   }
