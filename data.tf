@@ -18,7 +18,7 @@
 
 data "aws_ami" "ami_info" {
   most_recent = true
-  owners      = ["658643245214"] # Red Hat official
+  owners      = ["309956199498 "] # Red Hat official
 
   filter {
     name   = "name"
