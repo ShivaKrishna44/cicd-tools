@@ -2,7 +2,7 @@ module "jenkins" {
   source  = "terraform-aws-modules/ec2-instance/aws"
 
   name = "jenkins"
-
+  
   instance_type          = "t3.small"
   vpc_security_group_ids = ["sg-0d87cfe900b382a21"] #replace your SG
   subnet_id = "subnet-0b92dc8b84f647936" #replace your Subnet
@@ -13,14 +13,12 @@ module "jenkins" {
   }
 
   # Define the root volume size and type
-  root_block_device = [
-    {
+  root_block_device = {
       volume_size = 50       # Size of the root volume in GB
       volume_type = "gp3"    # General Purpose SSD (you can change it if needed)
       delete_on_termination = true  # Automatically delete the volume when the instance is terminated
     }
-  ]
-}
+ }
 
 module "jenkins_agent" {
   source  = "terraform-aws-modules/ec2-instance/aws"
@@ -36,14 +34,12 @@ module "jenkins_agent" {
     Name = "jenkins-agent"
   }
 
-  root_block_device = [
-    {
+  root_block_device = {
       volume_size = 50       # Size of the root volume in GB
       volume_type = "gp3"    # General Purpose SSD (you can change it if needed)
       delete_on_termination = true  # Automatically delete the volume when the instance is terminated
     }
-  ]
-}
+ }
 
 module "records" {
   source  = "terraform-aws-modules/route53/aws//modules/records"
