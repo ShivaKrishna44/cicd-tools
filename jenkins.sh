@@ -1,16 +1,16 @@
 #!/bin/bash
 set -e
 
-echo "===== Resizing Disk ====="
-growpart /dev/nvme0n1 4 || true
+echo "===== Expanding Root Volume (if resized in AWS) ====="
 
-lvextend -L +10G /dev/RootVG/rootVol || true
-lvextend -L +10G /dev/mapper/RootVG-varVol || true
-lvextend -l +100%FREE /dev/mapper/RootVG-varTmpVol || true
-
-xfs_growfs / || true
-xfs_growfs /var || true
-xfs_growfs /var/tmp || true
+if lsblk | grep -q nvme0n1p1; then
+    growpart /dev/nvme0n1 1 || true
+    if df -T / | grep -q xfs; then
+        xfs_growfs /
+    else
+        resize2fs /dev/nvme0n1p1
+    fi
+fi
 
 echo "===== Installing Packages ====="
 dnf update -y
