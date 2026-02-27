@@ -2,12 +2,16 @@ module "jenkins" {
   source  = "terraform-aws-modules/ec2-instance/aws"
 
   name = "jenkins"
-  
+
   instance_type          = "t3.small"
-  vpc_security_group_ids = ["sg-0d87cfe900b382a21"] #replace your SG
-  subnet_id = "subnet-0b92dc8b84f647936" #replace your Subnet
-  ami = data.aws_ami.ami_info.id
+  vpc_security_group_ids = ["sg-0d87cfe900b382a21"]
+  subnet_id              = "subnet-0b92dc8b84f647936"
+
+  key_name = aws_key_pair.eks.key_name   # reference here
+
+  ami       = data.aws_ami.ami_info.id
   user_data = file("jenkins.sh")
+
   tags = {
     Name = "jenkins"
   }
