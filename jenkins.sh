@@ -1,21 +1,41 @@
 #!/bin/bash
+set -e
 
-#resize disk from 20GB to 50GB
-growpart /dev/nvme0n1 4
+echo "===== Resizing Disk ====="
+growpart /dev/nvme0n1 4 || true
 
-lvextend -L +10G /dev/RootVG/rootVol
-lvextend -L +10G /dev/mapper/RootVG-varVol
-lvextend -l +100%FREE /dev/mapper/RootVG-varTmpVol
+lvextend -L +10G /dev/RootVG/rootVol || true
+lvextend -L +10G /dev/mapper/RootVG-varVol || true
+lvextend -l +100%FREE /dev/mapper/RootVG-varTmpVol || true
 
-xfs_growfs /
-xfs_growfs /var/tmp
-xfs_growfs /var
+xfs_growfs / || true
+xfs_growfs /var || true
+xfs_growfs /var/tmp || true
 
-sudo dnf install git -y
-sudo dnf install java-17-amazon-corretto -y
-sudo curl -o /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
-sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
-sudo dnf install jenkins -y
-sudo systemctl enable jenkins
-sudo systemctl start jenkins
+echo "===== Installing Packages ====="
+dnf update -y
+dnf install -y git java-17-amazon-corretto wget
 
+echo "===== Configuring Jenkins Repository (AL2023 Compatible) ====="
+rm -f /etc/yum.repos.d/jenkins.repo
+
+cat <<EOF > /etc/yum.repos.d/jenkins.repo
+[jenkins]
+name=Jenkins
+baseurl=https://pkg.jenkins.io/rpm-stable
+enabled=1
+gpgcheck=0
+EOF
+
+dnf clean all
+dnf makecache
+
+echo "===== Installing Jenkins ====="
+dnf install -y jenkins
+
+echo "===== Starting Jenkins ====="
+systemctl daemon-reload
+systemctl enable jenkins
+systemctl start jenkins
+
+echo "===== Jenkins Installation Complete ====="
