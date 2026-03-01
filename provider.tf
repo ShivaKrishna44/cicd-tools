@@ -20,9 +20,3 @@ provider "aws" {
   region = "us-east-1"
 }
 
-
-  resource "aws_key_pair" "eks" {
-  key_name   = "eks"
-  public_key = file("C:/Devops/eks.pub")
-}
-
