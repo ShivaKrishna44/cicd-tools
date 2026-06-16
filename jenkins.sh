@@ -1,64 +1,41 @@
-##!/bin/bash
-
-#resize disk from 20GB to 50GB
-#growpart /dev/nvme0n1 4
-
-#lvextend -L +10G /dev/RootVG/rootVol
-#lvextend -L +10G /dev/mapper/RootVG-varVol
-#lvextend -l +100%FREE /dev/mapper/RootVG-varTmpVol
-
-#xfs_growfs /
-#xfs_growfs /var/tmp
-#xfs_growfs /var
-
-#curl -o /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
-##rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
-#yum install fontconfig java-17-openjdk jenkins -y
-#yum install jenkins -y
-#systemctl daemon-reload
-#systemctl enable jenkins
-#systemctl start jenkins
-
 #!/bin/bash
-# Send all output to a log file for easier debugging if anything fails
-exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>&1)
+set -e
 
-echo "=== Starting Jenkins Installation Workflow ==="
+echo "===== Expanding Root Volume (if resized in AWS) ====="
 
-# 1. Enable official AWS-provided Red Hat channels
-echo "--> Enabling RHUI repositories..."
-dnf config-manager --set-enabled rhui-REGION-rhel-9-for-x86_64-baseos-rhui-rpms
-dnf config-manager --set-enabled rhui-REGION-rhel-9-for-x86_64-appstream-rhui-rpms
+if lsblk | grep -q nvme0n1p1; then
+    growpart /dev/nvme0n1 1 || true
+    if df -T / | grep -q xfs; then
+        xfs_growfs /
+    else
+        resize2fs /dev/nvme0n1p1
+    fi
+fi
 
-# 2. Install basic system utility packages
-echo "--> Installing baseline utilities..."
-dnf install wget fontconfig -y
+echo "===== Installing Packages ====="
+dnf update -y
+dnf install -y git java-17-amazon-corretto wget
 
-# 3. Securely pull down the official Jenkins package repository
-echo "--> Downloading Jenkins repository tracker..."
-wget -O /etc/yum.repos.d/jenkins.repo https://jenkins.io
+echo "===== Configuring Jenkins Repository (AL2023 Compatible) ====="
+rm -f /etc/yum.repos.d/jenkins.repo
 
-# 4. Import the CORRECT armored cryptographic validation signature key
-echo "--> Importing Jenkins GPG authentication key..."
-rpm --import https://jenkins.io
+cat <<EOF > /etc/yum.repos.d/jenkins.repo
+[jenkins]
+name=Jenkins
+baseurl=https://pkg.jenkins.io/rpm-stable
+enabled=1
+gpgcheck=0
+EOF
 
-# 5. Install the correct Java 21 environment first
-echo "--> Installing Java 21..."
-dnf install java-21-openjdk java-21-openjdk-devel -y
+dnf clean all
+dnf makecache
 
-# 6. Install the Jenkins engine core package
-echo "--> Installing Jenkins package..."
-dnf install jenkins -y
+echo "===== Installing Jenkins ====="
+dnf install -y jenkins
 
-# 7. Create explicit operational logging folders and assign permissions
-echo "--> Creating required directories and applying permissions..."
-mkdir -p /var/log/jenkins
-chown -R jenkins:jenkins /var/lib/jenkins /var/cache/jenkins /var/log/jenkins
-
-# 8. Reload system structures, set to run on boot, and start the engine
-echo "--> Starting Jenkins system service thread..."
+echo "===== Starting Jenkins ====="
 systemctl daemon-reload
 systemctl enable jenkins
-systemctl restart jenkins
+systemctl start jenkins
 
-echo "=== Jenkins Installation Workflow Finished Successfully! ==="
+echo "===== Jenkins Installation Complete ====="
