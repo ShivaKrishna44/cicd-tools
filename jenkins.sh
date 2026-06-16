@@ -22,7 +22,7 @@
 #!/bin/bash
 dnf install wget
 # Send all output to a log file for easier debugging if anything fails
-exec > >(tee /var/log/user-data.log|logger -t user-data -s2) 2>&1
+exec > >(tee /var/log/user-data.log|logger -t user-data -s) 2>&1
 
 echo "=== Starting Jenkins Installation Workflow ==="
 
