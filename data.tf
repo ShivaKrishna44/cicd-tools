@@ -1,12 +1,10 @@
-
 data "aws_ami" "ami_info" {
   most_recent = true
-  # Official Rocky Linux Organization Account ID
-  owners      = ["792107900819"] 
+  owners      = ["137112412989"] # Official Amazon Account ID
 
   filter {
     name   = "name"
-    values = ["Rocky-9-EC2-Base-*.x86_64"]
+    values = ["al2023-ami-2023.*-x86_64"] # Finds the latest stable AL2023 release
   }
 
   filter {
