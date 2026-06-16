@@ -20,13 +20,12 @@
 #systemctl start jenkins
 
 #!/bin/bash
-dnf install wget
 # Send all output to a log file for easier debugging if anything fails
-exec > >(tee /var/log/user-data.log|logger -t user-data -s) 2>&1
+exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>&1)
 
 echo "=== Starting Jenkins Installation Workflow ==="
 
-# 1. Enable official AWS-provided Red Hat channels (Bypasses Subscription Manager)
+# 1. Enable official AWS-provided Red Hat channels
 echo "--> Enabling RHUI repositories..."
 dnf config-manager --set-enabled rhui-REGION-rhel-9-for-x86_64-baseos-rhui-rpms
 dnf config-manager --set-enabled rhui-REGION-rhel-9-for-x86_64-appstream-rhui-rpms
@@ -39,17 +38,17 @@ dnf install wget fontconfig -y
 echo "--> Downloading Jenkins repository tracker..."
 wget -O /etc/yum.repos.d/jenkins.repo https://jenkins.io
 
-# 4. Import the official Jenkins cryptographic validation signature key
+# 4. Import the CORRECT armored cryptographic validation signature key
 echo "--> Importing Jenkins GPG authentication key..."
 rpm --import https://jenkins.io
 
-# 5. Install the correct Java 21 environment alongside Jenkins core binaries
-echo "--> Executing package installation block (Java 21 + Jenkins)..."
-dnf install java-21-openjdk java-21-openjdk-devel jenkins -y
+# 5. Install the correct Java 21 environment first
+echo "--> Installing Java 21..."
+dnf install java-21-openjdk java-21-openjdk-devel -y
 
-# 6. Ensure the global environment defaults directly to Java 21 execution
-echo "--> Re-linking core system alternatives..."
-alternatives --set java /usr/lib/jvm/jre-21-openjdk/bin/java
+# 6. Install the Jenkins engine core package
+echo "--> Installing Jenkins package..."
+dnf install jenkins -y
 
 # 7. Create explicit operational logging folders and assign permissions
 echo "--> Creating required directories and applying permissions..."
