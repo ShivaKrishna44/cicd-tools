@@ -1,46 +1,19 @@
-#!/bin/bash
-set -e
+!/bin/bash
 
-echo "===== Expanding Root Volume (if resized in AWS) ====="
+resize disk from 20GB to 50GB
+growpart /dev/nvme0n1 4
+lvextend -L +10G /dev/RootVG/rootVol
+lvextend -L +10G /dev/mapper/RootVG-varVol
+lvextend -l +100%FREE /dev/mapper/RootVG-varTmpVol
 
-if lsblk | grep -q nvme0n1p1; then
-    growpart /dev/nvme0n1 1 || true
-    if df -T / | grep -q xfs; then
-        xfs_growfs /
-    else
-        resize2fs /dev/nvme0n1p1
-    fi
-fi
+xfs_growfs /
+xfs_growfs /var/tmp
+xfs_growfs /var
 
-echo "===== Installing Packages ====="
-dnf clean all
-dnf update -y
-#dnf install -y git java-17-amazon-corretto wget
-dnf install -y git wget fontconfig java-21-amazon-corretto
-
-echo "===== Configuring Jenkins Repository (AL2023 Compatible) ====="
-rm -f /etc/yum.repos.d/jenkins.repo
-
-cat <<EOF > /etc/yum.repos.d/jenkins.repo
-[jenkins]
-name=Jenkins-stable
-baseurl=https://jenkins.io
-#enabled=1
-gpgcheck=0
-EOF
-
-# Import the correct verification key file path
-rpm --import https://jenkins.iojenkins.io-2023.key
-
-dnf clean all
-dnf makecache
-
-echo "===== Installing Jenkins ====="
-dnf install -y jenkins
-
-echo "===== Starting Jenkins ====="
+curl -o /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+yum install fontconfig java-17-openjdk jenkins -y
+yum install jenkins -y
 systemctl daemon-reload
 systemctl enable jenkins
 systemctl start jenkins
-
-echo "===== Jenkins Installation Complete ====="
