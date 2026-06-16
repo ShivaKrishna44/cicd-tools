@@ -1,20 +1,20 @@
 data "aws_ami" "ami_info" {
-  most_recent = true
-  owners      = ["137112412989"] # Official Amazon Account ID
 
-  filter {
-    name   = "name"
-    values = ["al2023-ami-2023.*-x86_64"] # Finds the latest stable AL2023 release
-  }
+    most_recent = true
+    owners = ["973714476881"]
 
-  filter {
-    name   = "root-device-type"
-    values = ["ebs"]
-  }
+    filter {
+        name   = "name"
+        values = ["RHEL-9-DevOps-Practice"]
+    }
 
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
+    filter {
+        name   = "root-device-type"
+        values = ["ebs"]
+    }
+
+    filter {
+        name   = "virtualization-type"
+        values = ["hvm"]
+    }
 }
-
