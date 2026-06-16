@@ -1,10 +1,12 @@
+
 data "aws_ami" "ami_info" {
   most_recent = true
-  owners      = ["309956199498"] # Official Amazon Red Hat Account ID
+  # Official Rocky Linux Organization Account ID
+  owners      = ["792107900819"] 
 
   filter {
     name   = "name"
-    values = ["RHEL-9.*-x86_64-*Hourly*"] # Finds the latest standard RHEL 9 x86_64 image
+    values = ["Rocky-9-EC2-Base-*.x86_64"]
   }
 
   filter {
