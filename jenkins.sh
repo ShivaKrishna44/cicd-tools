@@ -1,17 +1,24 @@
 #!/bin/bash
-#!/bin/bash
 set -euxo pipefail
 
-#Option	Meaning
-#-e	Exit on command failure
-#-u	Error on undefined variables
-#-x	Print commands as they execute
-#-o pipefail	Fail if any command in a pipe fails
+echo "========== Starting Jenkins Setup =========="
+
+############################################
+
+# Disk Expansion
+
+############################################
 
 growpart /dev/nvme0n1 4 || true
 
 pvresize /dev/nvme0n1p4 || true
 
+VFREE=$(vgs --noheadings -o vg_free --units g RootVG | tr -d ' ' | cut -d. -f1)
+
+if [ "$VFREE" -gt 1 ]; then
+echo "Extending logical volumes..."
+
+```
 lvextend -L +10G /dev/mapper/RootVG-homeVol || true
 lvextend -L +10G /dev/mapper/RootVG-varVol || true
 lvextend -l +100%FREE /dev/mapper/RootVG-varTmpVol || true
@@ -19,33 +26,82 @@ lvextend -l +100%FREE /dev/mapper/RootVG-varTmpVol || true
 xfs_growfs /home || true
 xfs_growfs /var || true
 xfs_growfs /var/tmp || true
+```
 
-# Jenkins Repository
-curl -fsSL -o /etc/yum.repos.d/jenkins.repo \
-https://pkg.jenkins.io/redhat-stable/jenkins.repo
+else
+echo "No free space available in RootVG. Skipping LV extension."
+fi
 
-rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+############################################
 
-dnf clean all
-dnf makecache
+# Java 21 Installation
 
+############################################
+
+if ! java -version 2>&1 | grep -q "21"; then
 dnf install -y java-21-openjdk java-21-openjdk-devel fontconfig
 
+```
 alternatives --set java /usr/lib/jvm/java-21-openjdk/bin/java
+alternatives --set javac /usr/lib/jvm/java-21-openjdk/bin/javac
+```
+
+fi
 
 java -version
 
+############################################
+
+# Jenkins Repository
+
+############################################
+
+if [ ! -f /etc/yum.repos.d/jenkins.repo ]; then
+curl -fsSL 
+-o /etc/yum.repos.d/jenkins.repo 
+https://pkg.jenkins.io/redhat-stable/jenkins.repo
+
+```
+rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+```
+
+fi
+
+############################################
+
+# Jenkins Installation
+
+############################################
+
+if ! rpm -qa | grep -q "^jenkins"; then
+dnf clean all
+dnf makecache
 dnf install -y jenkins
+fi
+
+############################################
+
+# Jenkins Service
+
+############################################
 
 systemctl daemon-reload
 systemctl enable jenkins
-systemctl start jenkins
+systemctl restart jenkins
 
-# Verify Jenkins
-systemctl status jenkins --no-pager
+sleep 15
 
-# Verify Jenkins Port
+############################################
+
+# Validation
+
+############################################
+
+systemctl is-active jenkins
+
 ss -tulpn | grep 8080
 
-# Display Initial Admin Password
+echo "Jenkins Initial Password:"
 cat /var/lib/jenkins/secrets/initialAdminPassword
+
+echo "========== Jenkins Setup Completed =========="
