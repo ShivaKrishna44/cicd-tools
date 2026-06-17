@@ -1,18 +1,24 @@
 #!/bin/bash
-set -e
+#!/bin/bash
+set -euxo pipefail
 
-# Extend partition
-growpart /dev/nvme0n1 4
+#Option	Meaning
+#-e	Exit on command failure
+#-u	Error on undefined variables
+#-x	Print commands as they execute
+#-o pipefail	Fail if any command in a pipe fails
 
-# Extend LVs
-lvextend -L +10G /dev/RootVG/rootVol
-lvextend -L +10G /dev/mapper/RootVG-varVol
-lvextend -l +100%FREE /dev/mapper/RootVG-varTmpVol
+growpart /dev/nvme0n1 4 || true
 
-# Grow filesystems
-xfs_growfs /
-xfs_growfs /var
-xfs_growfs /var/tmp
+pvresize /dev/nvme0n1p4 || true
+
+lvextend -L +10G /dev/mapper/RootVG-homeVol || true
+lvextend -L +10G /dev/mapper/RootVG-varVol || true
+lvextend -l +100%FREE /dev/mapper/RootVG-varTmpVol || true
+
+xfs_growfs /home || true
+xfs_growfs /var || true
+xfs_growfs /var/tmp || true
 
 # Jenkins repository
 curl -fsSL -o /etc/yum.repos.d/jenkins.repo 

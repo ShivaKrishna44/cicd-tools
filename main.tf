@@ -19,7 +19,7 @@ module "jenkins" {
 
   # Define the root volume size and type
   root_block_device = {
-    volume_size           = 50    # Size of the root volume in GB
+    volume_size           = 70    # Size of the root volume in GB
     volume_type           = "gp3" # General Purpose SSD (you can change it if needed)
     delete_on_termination = true  # Automatically delete the volume when the instance is terminated
   }
