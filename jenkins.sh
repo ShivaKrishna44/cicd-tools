@@ -20,37 +20,26 @@ xfs_growfs /home || true
 xfs_growfs /var || true
 xfs_growfs /var/tmp || true
 
-# Jenkins repository
-curl -fsSL -o /etc/yum.repos.d/jenkins.repo 
+# Jenkins Repository
+curl -fsSL -o /etc/yum.repos.d/jenkins.repo \
 https://pkg.jenkins.io/redhat-stable/jenkins.repo
 
 rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
 
-# Refresh repositories
 dnf clean all
 dnf makecache
 
-# Install Java 21 (Required for latest Jenkins)
 dnf install -y java-21-openjdk java-21-openjdk-devel fontconfig
 
-# Set Java 21 as default
 alternatives --set java /usr/lib/jvm/java-21-openjdk/bin/java
-alternatives --set javac /usr/lib/jvm/java-21-openjdk/bin/javac
 
-# Verify Java
 java -version
 
-# Install Jenkins
 dnf install -y jenkins
 
-# Create Jenkins log directory
-mkdir -p /var/log/jenkins
-chown -R jenkins:jenkins /var/log/jenkins
-
-# Start Jenkins
 systemctl daemon-reload
 systemctl enable jenkins
-systemctl restart jenkins
+systemctl start jenkins
 
 # Verify Jenkins
 systemctl status jenkins --no-pager
