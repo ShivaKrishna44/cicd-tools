@@ -42,20 +42,24 @@ java -version
 # Jenkins Repository
 ############################################
 
-if [ ! -f /etc/yum.repos.d/jenkins.repo ]; then
-  curl -fsSL \
-    -o /etc/yum.repos.d/jenkins.repo \
-    https://pkg.jenkins.io/redhat-stable/jenkins.repo
-  rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
-fi
+# Always re-add repo to ensure GPG key is current
+curl -fsSL \
+  -o /etc/yum.repos.d/jenkins.repo \
+  https://pkg.jenkins.io/redhat-stable/jenkins.repo
+
+# Import both old and new Jenkins GPG keys to handle key rotation
+rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+
+# Clean cached metadata so the new key takes effect
+# -y flag prevents interactive GPG confirmation prompt in non-interactive user_data runs
+dnf clean metadata
+dnf makecache -y
 
 ############################################
 # Jenkins Installation
 ############################################
 
 if ! rpm -qa | grep -q "^jenkins"; then
-  dnf clean all
-  dnf makecache
   dnf install -y jenkins
 fi
 
