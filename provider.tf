@@ -7,9 +7,10 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "vosukula-remote-state"
-    key            = "expense-backend-infra" # you should have unique keys with in the bucket, same key should not be used in other repos or tf projects
+    bucket         = "shivakrishna-tf-state-dev"
+    key            = "dev/terraform.tfstate"
     region         = "us-east-1"
+    encrypt        = true
     dynamodb_table = "vosukula-state-locking"
   }
 }
