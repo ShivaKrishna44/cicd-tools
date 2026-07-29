@@ -26,6 +26,5 @@ Restart Jenkins once plugins are installed
 * Go to Manage Jenkins -> System
 * Find Global Trusted Pipeline Libraries section
 * Name as jenkins-shared-library, default version main and load implicitly
-* Location is https://github.com/daws-81s/jenkins-shared-library.git
 
 Now Jenkins is ready to use.
