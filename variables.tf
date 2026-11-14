@@ -10,38 +10,37 @@ variable "route53_zone_id" {
   description = "Route53 hosted zone ID for vosukula.online"
 }
 
-variable "ami_id" {
-  type        = string
-  default     = "ami-0220d79f3f480ecf5"
-  description = "AMI ID for Jenkins and Jenkins agent EC2 instances (RHEL/Amazon Linux in us-east-1)"
-}
-
 variable "jenkins_instance_type" {
   type        = string
   default     = "t3.small"
-  description = "EC2 instance type for Jenkins server"
+  description = "EC2 instance type for Jenkins server. The subnet is picked in a zone that offers it."
 }
 
 variable "agent_instance_type" {
   type        = string
   default     = "t3.small"
-  description = "EC2 instance type for Jenkins agent"
+  description = "EC2 instance type for Jenkins agent. The subnet is picked in a zone that offers it."
 }
 
 variable "subnet_id" {
   type        = string
-  default     = "subnet-01f5e8f84851593f3"
-  description = "Subnet ID where Jenkins instances will be launched"
+  default     = null
+  description = "Optional. Leave it unset and a subnet is picked in the default VPC, in a zone that offers both instance types. Set it only to force one specific subnet."
 }
 
 variable "security_group_ids" {
   type        = list(string)
-  default     = ["sg-0b7658fc6ffcc0172"]
-  description = "Security group IDs to attach to Jenkins instances"
+  default     = []
+  description = "Optional. Leave it empty and a security group is created in the same VPC as the subnet. If you set it, the groups must be in the same VPC as the subnet."
 }
 
-variable "key_name" {
-  type        = string
-  default     = "dev-ops-key"
-  description = "EC2 key pair name for SSH access"
+variable "allowed_cidrs" {
+  type        = list(string)
+  default     = []
+  description = "Who may reach SSH (22) and Jenkins (8080) on the created security group. Leave it empty to allow only your current public IP. Use [\"0.0.0.0/0\"] only if you really want it open to everyone."
+
+  validation {
+    condition     = alltrue([for c in var.allowed_cidrs : can(cidrhost(c, 0))])
+    error_message = "Every entry in allowed_cidrs must be a valid CIDR, for example 203.0.113.7/32."
+  }
 }

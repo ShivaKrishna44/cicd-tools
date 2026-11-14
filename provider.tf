@@ -4,6 +4,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "6.37.0"
     }
+    http = {
+      source  = "hashicorp/http"
+      version = ">= 3.0"
+    }
   }
 
   backend "s3" {
@@ -11,7 +15,8 @@ terraform {
     key            = "dev/terraform.tfstate"
     region         = "us-east-1"
     encrypt        = true
-    dynamodb_table = "vosukula-state-locking"
+    #use_lockfile   = true
+    #dynamodb_table = "vosukula-state-locking"
   }
 }
 
