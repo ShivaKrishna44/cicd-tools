@@ -109,30 +109,32 @@ resource "aws_instance" "jenkins_agent" {
 # ==========================================
 # Route53 DNS Records
 # ==========================================
-# NOTE: These records are commented out because jenkins.vosukula.online
-# already has a CNAME record managed by the ALB Ingress Controller.
-# Creating an A record with the same name is not permitted by Route53.
-# Options:
-#   1. Delete the existing CNAME via AWS console/CLI and uncomment these blocks
-#   2. Leave DNS managed by the ALB Ingress Controller (recommended if using EKS)
+# NOTE: jenkins.vosukula.online already has a CNAME that the ALB Ingress Controller owns (the
+# Jenkins that runs inside EKS). Route53 does not allow an A record and a CNAME on one name,
+# so these two instances use different names. The EKS record is not touched.
+#   Jenkins server -> jenkins-ec2.vosukula.online   (var.jenkins_dns_name)
+#   Jenkins agent  -> jenkins-agent.vosukula.online (var.agent_dns_name)
+# The IPs are public and change when an instance is replaced. Terraform updates the records.
+# allow_overwrite = true: if an old record with the same name and type is left from an
+# earlier run, Terraform takes it over instead of failing with "already exists".
 
-# resource "aws_route53_record" "jenkins" {
-#   zone_id         = var.route53_zone_id
-#   name            = "jenkins.${var.zone_name}"
-#   type            = "A"
-#   ttl             = 60
-#   allow_overwrite = true
-#   records         = [aws_instance.jenkins.public_ip]
-# }
+resource "aws_route53_record" "jenkins" {
+  zone_id         = var.route53_zone_id
+  name            = "${var.jenkins_dns_name}.${var.zone_name}"
+  type            = "A"
+  ttl             = 60
+  allow_overwrite = true
+  records         = [aws_instance.jenkins.public_ip]
+}
 
-# resource "aws_route53_record" "jenkins_agent" {
-#   zone_id         = var.route53_zone_id
-#   name            = "jenkins-agent.${var.zone_name}"
-#   type            = "A"
-#   ttl             = 60
-#   allow_overwrite = true
-#   records         = [aws_instance.jenkins_agent.public_ip]
-# }
+resource "aws_route53_record" "jenkins_agent" {
+  zone_id         = var.route53_zone_id
+  name            = "${var.agent_dns_name}.${var.zone_name}"
+  type            = "A"
+  ttl             = 60
+  allow_overwrite = true
+  records         = [aws_instance.jenkins_agent.public_ip]
+}
 
 # ==========================================
 # Outputs
@@ -151,6 +153,16 @@ output "jenkins_agent_public_ip" {
 output "jenkins_url" {
   description = "Open this in a browser (only from an allowed IP). Jenkins takes 5 to 10 minutes after boot."
   value       = "http://${aws_instance.jenkins.public_ip}:8080"
+}
+
+output "jenkins_dns_url" {
+  description = "Jenkins by name (only reachable from an allowed IP)."
+  value       = "http://${aws_route53_record.jenkins.fqdn}:8080"
+}
+
+output "jenkins_agent_dns" {
+  description = "DNS name of the Jenkins agent."
+  value       = aws_route53_record.jenkins_agent.fqdn
 }
 
 output "jenkins_private_ip" {

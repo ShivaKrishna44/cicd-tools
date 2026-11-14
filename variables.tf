@@ -10,6 +10,28 @@ variable "route53_zone_id" {
   description = "Route53 hosted zone ID for vosukula.online"
 }
 
+variable "jenkins_dns_name" {
+  type        = string
+  default     = "jenkins-ec2"
+  description = "DNS name for the Jenkins server, added under zone_name. Not 'jenkins': that name is owned by the EKS ingress CNAME and an A record cannot share it."
+
+  validation {
+    condition     = can(regex("^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$", var.jenkins_dns_name))
+    error_message = "jenkins_dns_name must be a single DNS label: lowercase letters, digits and hyphens."
+  }
+}
+
+variable "agent_dns_name" {
+  type        = string
+  default     = "jenkins-agent"
+  description = "DNS name for the Jenkins agent, added under zone_name."
+
+  validation {
+    condition     = can(regex("^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$", var.agent_dns_name))
+    error_message = "agent_dns_name must be a single DNS label: lowercase letters, digits and hyphens."
+  }
+}
+
 variable "jenkins_instance_type" {
   type        = string
   default     = "t3.small"
